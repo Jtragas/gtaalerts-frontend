@@ -1,1 +1,0 @@
-# gtaalerts-frontend
