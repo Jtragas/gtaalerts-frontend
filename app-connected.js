@@ -36,7 +36,7 @@ async function fetchIncidents() {
       // Transform backend data to frontend format
       allIncidents = data.incidents.map(incident => ({
         id: incident.id,
-        type: incident.category, // backend uses 'category', frontend uses 'type'
+        type: incident.category,
         title: incident.type || incident.description,
         location: incident.address || incident.location || 'Toronto',
         status: incident.description,
@@ -55,13 +55,12 @@ async function fetchIncidents() {
     }
   } catch (error) {
     console.error('❌ Error fetching incidents:', error);
-    // Show error state
     allIncidents = [];
     renderAll();
   }
 }
 
-// Format time ago (e.g., "8 min ago")
+// Format time ago
 function formatTimeAgo(date) {
   const now = new Date();
   const diffMs = now - date;
@@ -196,7 +195,6 @@ function renderAll() {
   }
 }
 
-// Filter button handlers
 document.querySelectorAll(".filter").forEach(button => {
   button.addEventListener("click", () => {
     document.querySelectorAll(".filter").forEach(btn => btn.classList.remove("active"));
@@ -206,7 +204,6 @@ document.querySelectorAll(".filter").forEach(button => {
   });
 });
 
-// Initial load
 window.addEventListener("load", () => {
   console.log('🚀 GTA Alerts loading...');
   fetchIncidents();
@@ -215,5 +212,5 @@ window.addEventListener("load", () => {
   setInterval(() => {
     console.log('🔄 Auto-refreshing incidents...');
     fetchIncidents();
-  }, 5 * 60 * 1000); // 5 minutes
+  }, 5 * 60 * 1000);
 });
