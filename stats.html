@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GTA Alerts Statistics</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚨</text></svg>">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            color: #f1f5f9;
+            min-height: 100vh;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #c8102e 0%, #a00d24 100%);
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(200, 16, 46, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            position: relative;
+            z-index: 1;
+        }
+        
+        h1::before {
+            content: '📊';
+            margin-right: 0.5rem;
+            display: inline-block;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+            opacity: 0.95;
+            font-weight: 500;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .nav {
+            margin-top: 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .nav a {
+            display: inline-block;
+            padding: 0.75rem 2rem;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .nav a:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .period-tabs {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .period-tab {
+            padding: 0.5rem 1.5rem;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .period-tab.active {
+            background: white;
+            color: #c8102e;
+            border-color: white;
+        }
+        
+        .period-tab:hover:not(.active) {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #c8102e, #ff6b6b);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(200, 16, 46, 0.2);
+            background: rgba(255,255,255,0.08);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, #e2e8f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+        }
+        
+        .chart-section {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .chart-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .data-table th {
+            text-align: left;
+            padding: 1rem;
+            background: rgba(255,255,255,0.05);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+        }
+        
+        .data-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .data-table tr:hover {
+            background: rgba(255,255,255,0.03);
+        }
+        
+        .count-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: linear-gradient(135deg, #c8102e 0%, #a00d24 100%);
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 4rem;
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+        
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            color: #fca5a5;
+        }
+        
+        footer {
+            background: rgba(0,0,0,0.2);
+            padding: 2rem;
+            text-align: center;
+            margin-top: 4rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        footer a {
+            color: #60a5fa;
+            text-decoration: none;
+            margin: 0 1rem;
+            font-weight: 500;
+        }
+        
+        footer a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .chart-container { height: 250px; }
+            .period-tabs { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>GTA Alerts Statistics</h1>
+        <p class="subtitle">Real-time incident analytics and insights</p>
+        <div class="period-tabs">
+            <button class="period-tab active" onclick="loadStats('24h')">Last 24 Hours</button>
+            <button class="period-tab" onclick="loadStats('7d')">Last 7 Days</button>
+            <button class="period-tab" onclick="loadStats('30d')">Last 30 Days</button>
+        </div>
+        <div class="nav">
+            <a href="/">⬅️ Back to Live Map</a>
+        </div>
+    </header>
+
+    <main id="content">
+        <div class="loading">📊 Loading statistics...</div>
+    </main>
+
+    <footer>
+        <a href="/">Home</a>
+        <a href="/stats.html">GTA Incident Statistics</a>
+        <a href="#disclaimer">Disclaimer</a>
+    </footer>
+
+    <script>
+        const API_URL = 'https://gta-alerts-production.up.railway.app/api/stats';
+        let currentPeriod = '24h';
+        let hourlyChart = null;
+        let sourceChart = null;
+
+        async function loadStats(period = '24h') {
+            currentPeriod = period;
+            
+            // Update active tab
+            document.querySelectorAll('.period-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event?.target?.classList.add('active');
+            
+            try {
+                const response = await fetch(`${API_URL}?period=${period}`);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error('Failed to load statistics');
+                }
+                
+                renderStats(data);
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                document.getElementById('content').innerHTML = `
+                    <div class="error">
+                        <strong>⚠️ Error loading statistics</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function renderStats(data) {
+            const content = document.getElementById('content');
+            
+            const periodLabels = {
+                '24h': 'Last 24 Hours',
+                '7d': 'Last 7 Days',
+                '30d': 'Last 30 Days'
+            };
+            
+            content.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Incidents</div>
+                        <div class="stat-number">${data.total || 0}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Police Calls</div>
+                        <div class="stat-number">${data.bySource.police || 0}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Fire/EMS</div>
+                        <div class="stat-number">${(data.bySource.fire || 0) + (data.bySource.ems || 0)}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">TTC Alerts</div>
+                        <div class="stat-number">${data.bySource.ttc || 0}</div>
+                    </div>
+                </div>
+                
+                <div class="chart-section">
+                    <h2 class="chart-title">📈 Hourly Activity (Last 24 Hours)</h2>
+                    <div class="chart-container">
+                        <canvas id="hourlyChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-section">
+                    <h2 class="chart-title">📊 Incidents by Source</h2>
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="sourceChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-section">
+                    <h2 class="chart-title">🔥 Top Incident Types</h2>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Incident Type</th>
+                                <th style="text-align: right;">Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Object.entries(data.byType || {})
+                                .sort((a, b) => b[1] - a[1])
+                                .slice(0, 15)
+                                .map(([type, count]) => `
+                                    <tr>
+                                        <td>${escapeHtml(type)}</td>
+                                        <td style="text-align: right;"><span class="count-badge">${count}</span></td>
+                                    </tr>
+                                `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="chart-section">
+                    <h2 class="chart-title">🚔 Top Divisions/Regions</h2>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Division/Region</th>
+                                <th style="text-align: right;">Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Object.entries(data.byDivision || {})
+                                .sort((a, b) => b[1] - a[1])
+                                .slice(0, 15)
+                                .map(([division, count]) => `
+                                    <tr>
+                                        <td>${escapeHtml(division)}</td>
+                                        <td style="text-align: right;"><span class="count-badge">${count}</span></td>
+                                    </tr>
+                                `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            // Render hourly chart
+            renderHourlyChart(data.hourly || []);
+            
+            // Render source chart
+            renderSourceChart(data.bySource || {});
+        }
+
+        function renderHourlyChart(hourlyData) {
+            const ctx = document.getElementById('hourlyChart');
+            if (!ctx) return;
+            
+            if (hourlyChart) {
+                hourlyChart.destroy();
+            }
+            
+            const labels = hourlyData.map(item => {
+                const date = new Date(item.hour);
+                return date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+            });
+            
+            const counts = hourlyData.map(item => item.count);
+            
+            hourlyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Incidents',
+                        data: counts,
+                        borderColor: '#c8102e',
+                        backgroundColor: 'rgba(200, 16, 46, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#c8102e',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            padding: 12,
+                            titleColor: '#fff',
+                            bodyColor: '#e2e8f0',
+                            borderColor: 'rgba(200, 16, 46, 0.5)',
+                            borderWidth: 1
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        },
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderSourceChart(bySource) {
+            const ctx = document.getElementById('sourceChart');
+            if (!ctx) return;
+            
+            if (sourceChart) {
+                sourceChart.destroy();
+            }
+            
+            const sources = Object.keys(bySource);
+            const counts = Object.values(bySource);
+            
+            const colors = {
+                police: '#000000',
+                fire: '#dc2626',
+                ems: '#16a34a',
+                ttc: '#eab308'
+            };
+            
+            const backgroundColors = sources.map(s => colors[s] || '#64748b');
+            
+            sourceChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: sources.map(s => s.toUpperCase()),
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: backgroundColors,
+                        borderColor: '#1e293b',
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#e2e8f0',
+                                font: { size: 14, weight: '600' },
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            padding: 12,
+                            titleColor: '#fff',
+                            bodyColor: '#e2e8f0',
+                            borderColor: 'rgba(200, 16, 46, 0.5)',
+                            borderWidth: 1
+                        }
+                    }
+                }
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load stats on page load
+        loadStats('24h');
+    </script>
+</body>
+</html>
