@@ -3,299 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GTA Alerts Statistics</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚨</text></svg>">
+    <title>GTA Incident Statistics - Live Analytics</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📊</text></svg>">
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body {
-            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-            color: #f1f5f9;
-            min-height: 100vh;
-        }
-        
-        header {
-            background: linear-gradient(135deg, #c8102e 0%, #a00d24 100%);
-            padding: 2rem;
-            text-align: center;
-            box-shadow: 0 8px 32px rgba(200, 16, 46, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
-            opacity: 0.3;
-        }
-        
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            position: relative;
-            z-index: 1;
-        }
-        
-        h1::before {
-            content: '📊';
-            margin-right: 0.5rem;
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
+        header { background: linear-gradient(135deg, #c8102e 0%, #a00d24 100%); color: white; padding: 1.5rem 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header-content { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .header-left { display: flex; align-items: center; gap: 2rem; }
+        .weather-clock { display: flex; align-items: center; gap: 1.5rem; font-size: 0.95rem; }
+        .clock { font-weight: 600; }
+        .weather { display: flex; align-items: center; gap: 0.5rem; }
+        .weather-icon { font-size: 1.3rem; }
+        h1 { font-size: 2rem; font-weight: 700; cursor: pointer; }
+        h1:hover { opacity: 0.9; }
+        h1::before { 
+            content: '📊'; 
+            margin-right: 0.5rem; 
             display: inline-block;
-            animation: pulse 2s ease-in-out infinite;
         }
+        .status-badge { display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; }
+        .status-badge:hover { background: rgba(255,255,255,0.3); }
+        .status-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.8; }
-        }
+        .container { max-width: 1400px; margin: 2rem auto; padding: 0 1rem; }
         
-        .subtitle {
-            font-size: 1.1rem;
-            margin-top: 0.5rem;
-            opacity: 0.95;
-            font-weight: 500;
-            position: relative;
-            z-index: 1;
-        }
+        .page-title { text-align: center; margin-bottom: 2rem; }
+        .page-title h2 { font-size: 2rem; color: #1e293b; margin-bottom: 0.5rem; }
+        .page-title p { color: #64748b; font-size: 1rem; }
         
-        .nav {
-            margin-top: 1.5rem;
-            position: relative;
-            z-index: 1;
-        }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
         
-        .nav a {
-            display: inline-block;
-            padding: 0.75rem 2rem;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s;
-            border: 2px solid rgba(255,255,255,0.3);
-        }
+        .stat-card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+        .stat-card.total { border-top: 4px solid #c8102e; }
+        .stat-card.fire { border-top: 4px solid #dc2626; }
+        .stat-card.police { border-top: 4px solid #000000; }
+        .stat-card.ems { border-top: 4px solid #16a34a; }
+        .stat-card.ttc { border-top: 4px solid #eab308; }
         
-        .nav a:hover {
-            background: rgba(255,255,255,0.3);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
+        .stat-label { font-size: 0.9rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
+        .stat-value { font-size: 3rem; font-weight: 700; color: #1e293b; }
+        .stat-icon { font-size: 2rem; margin-bottom: 0.5rem; }
         
-        .period-tabs {
-            display: flex;
-            gap: 0.5rem;
-            justify-content: center;
-            margin-top: 1rem;
-            position: relative;
-            z-index: 1;
-        }
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
         
-        .period-tab {
-            padding: 0.5rem 1.5rem;
-            background: rgba(255,255,255,0.1);
-            border: 2px solid rgba(255,255,255,0.2);
-            color: white;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
+        .chart-card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .chart-card h3 { font-size: 1.25rem; color: #1e293b; margin-bottom: 1rem; text-align: center; }
+        .chart-container { position: relative; height: 300px; }
         
-        .period-tab.active {
-            background: white;
-            color: #c8102e;
-            border-color: white;
-        }
+        .back-button { display: inline-block; margin-bottom: 2rem; padding: 0.75rem 1.5rem; background: #c8102e; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: all 0.2s; }
+        .back-button:hover { background: #a00d24; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(200,16,46,0.4); }
         
-        .period-tab:hover:not(.active) {
-            background: rgba(255,255,255,0.2);
-        }
+        footer { background: #1e293b; color: #e2e8f0; padding: 2rem; text-align: center; margin-top: 3rem; }
+        footer a { color: #60a5fa; text-decoration: none; margin: 0 1rem; font-weight: 500; transition: color 0.2s; }
+        footer a:hover { color: #93c5fd; text-decoration: underline; }
         
-        main {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem 1rem;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .stat-card {
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 1.5rem;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #c8102e, #ff6b6b);
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 32px rgba(200, 16, 46, 0.2);
-            background: rgba(255,255,255,0.08);
-        }
-        
-        .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.8;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        
-        .stat-number {
-            font-size: 3rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #fff 0%, #e2e8f0 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            line-height: 1;
-        }
-        
-        .chart-section {
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-        }
-        
-        .chart-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .chart-container {
-            position: relative;
-            height: 300px;
-        }
-        
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-        }
-        
-        .data-table th {
-            text-align: left;
-            padding: 1rem;
-            background: rgba(255,255,255,0.05);
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            letter-spacing: 0.05em;
-            border-bottom: 2px solid rgba(255,255,255,0.1);
-        }
-        
-        .data-table td {
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        
-        .data-table tr:hover {
-            background: rgba(255,255,255,0.03);
-        }
-        
-        .count-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            background: linear-gradient(135deg, #c8102e 0%, #a00d24 100%);
-            border-radius: 20px;
-            font-weight: 700;
-            font-size: 0.9rem;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 4rem;
-            font-size: 1.2rem;
-            opacity: 0.8;
-        }
-        
-        .error {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin: 2rem 0;
-            color: #fca5a5;
-        }
-        
-        footer {
-            background: rgba(0,0,0,0.2);
-            padding: 2rem;
-            text-align: center;
-            margin-top: 4rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        footer a {
-            color: #60a5fa;
-            text-decoration: none;
-            margin: 0 1rem;
-            font-weight: 500;
-        }
-        
-        footer a:hover {
-            text-decoration: underline;
-        }
+        .loading { text-align: center; padding: 3rem; color: #64748b; }
+        .error { text-align: center; padding: 3rem; color: #dc2626; }
         
         @media (max-width: 768px) {
-            h1 { font-size: 2rem; }
+            header { padding: 1rem; }
+            .header-content { flex-direction: column; gap: 0.5rem; text-align: center; }
+            h1 { font-size: 1.5rem; }
+            .container { padding: 0.5rem; }
             .stats-grid { grid-template-columns: 1fr; }
+            .charts-grid { grid-template-columns: 1fr; }
             .chart-container { height: 250px; }
-            .period-tabs { flex-direction: column; }
+            .stat-value { font-size: 2.5rem; }
+            .weather-clock { font-size: 0.85rem; }
+            .weather-icon { font-size: 1.1rem; }
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>GTA Alerts Statistics</h1>
-        <p class="subtitle">Real-time incident analytics and insights</p>
-        <div class="period-tabs">
-            <button class="period-tab active" onclick="loadStats('24h')">Last 24 Hours</button>
-            <button class="period-tab" onclick="loadStats('7d')">Last 7 Days</button>
-            <button class="period-tab" onclick="loadStats('30d')">Last 30 Days</button>
-        </div>
-        <div class="nav">
-            <a href="/">⬅️ Back to Live Map</a>
+        <div class="header-content">
+            <div class="header-left">
+                <h1 onclick="window.location.href='/'">GTA Incident Statistics</h1>
+                <div class="weather-clock">
+                    <div class="clock" id="clock">--:-- --</div>
+                    <div class="weather">
+                        <span class="weather-icon">☁️</span>
+                        <span id="weather">12°C</span>
+                    </div>
+                </div>
+            </div>
+            <div class="status-badge" onclick="refreshStats()">
+                <div class="status-dot"></div>
+                <span id="status-text">Live Analytics</span>
+            </div>
         </div>
     </header>
 
-    <main id="content">
-        <div class="loading">📊 Loading statistics...</div>
-    </main>
+    <div class="container">
+        <a href="/" class="back-button">⬅️ Back to Live Map</a>
+        
+        <div class="page-title">
+            <h2>Real-time Incident Analytics</h2>
+            <p>Current snapshot of active incidents across the Greater Toronto Area</p>
+        </div>
+
+        <div id="loading" class="loading">
+            <h3>📊 Loading statistics...</h3>
+        </div>
+
+        <div id="error" class="error" style="display: none;">
+            <h3>❌ Error loading statistics</h3>
+            <p>Please try refreshing the page</p>
+        </div>
+
+        <div id="stats-content" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card total">
+                    <div class="stat-icon">🚨</div>
+                    <div class="stat-label">Total Active Incidents</div>
+                    <div class="stat-value" id="total-count">0</div>
+                </div>
+                
+                <div class="stat-card fire">
+                    <div class="stat-icon">🔥</div>
+                    <div class="stat-label">Fire & EMS</div>
+                    <div class="stat-value" id="fire-count">0</div>
+                </div>
+                
+                <div class="stat-card police">
+                    <div class="stat-icon">🚔</div>
+                    <div class="stat-label">Police Calls</div>
+                    <div class="stat-value" id="police-count">0</div>
+                </div>
+                
+                <div class="stat-card ttc">
+                    <div class="stat-icon">🚇</div>
+                    <div class="stat-label">TTC Alerts</div>
+                    <div class="stat-value" id="ttc-count">0</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Incidents by Category</h3>
+                    <div class="chart-container">
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <h3>Category Comparison</h3>
+                    <div class="chart-container">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <footer>
         <a href="/">Home</a>
@@ -304,264 +171,165 @@
     </footer>
 
     <script>
-        const API_URL = 'https://gta-alerts-production.up.railway.app/api/stats';
-        let currentPeriod = '24h';
-        let hourlyChart = null;
-        let sourceChart = null;
-
-        async function loadStats(period = '24h') {
-            currentPeriod = period;
-            
-            // Update active tab
-            document.querySelectorAll('.period-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            event?.target?.classList.add('active');
-            
+        const API_URL = 'https://gta-alerts-production.up.railway.app/api/all';
+        const REFRESH_INTERVAL = 10000; // 10 seconds
+        
+        let pieChart, barChart;
+        
+        // Update clock
+        function updateClock() {
+            const now = new Date();
+            const options = { 
+                timeZone: 'America/Toronto', 
+                hour: 'numeric', 
+                minute: '2-digit', 
+                hour12: true 
+            };
+            document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', options);
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+        
+        async function fetchStats() {
             try {
-                const response = await fetch(`${API_URL}?period=${period}`);
+                document.getElementById('status-text').textContent = 'Updating...';
+                
+                const response = await fetch(API_URL);
                 const data = await response.json();
                 
-                if (!data.success) {
-                    throw new Error('Failed to load statistics');
+                if (data.success && data.incidents) {
+                    const incidents = data.incidents;
+                    
+                    // Count by category
+                    const counts = {
+                        total: incidents.length,
+                        fire: incidents.filter(i => i.category === 'fire' || i.category === 'ems').length,
+                        police: incidents.filter(i => i.category === 'police').length,
+                        ttc: incidents.filter(i => i.category === 'ttc').length
+                    };
+                    
+                    // Update stat cards
+                    document.getElementById('total-count').textContent = counts.total;
+                    document.getElementById('fire-count').textContent = counts.fire;
+                    document.getElementById('police-count').textContent = counts.police;
+                    document.getElementById('ttc-count').textContent = counts.ttc;
+                    
+                    // Update charts
+                    updateCharts(counts);
+                    
+                    // Show content, hide loading
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('error').style.display = 'none';
+                    document.getElementById('stats-content').style.display = 'block';
+                    
+                    document.getElementById('status-text').textContent = 'Live Analytics';
+                } else {
+                    throw new Error('Invalid data format');
                 }
-                
-                renderStats(data);
             } catch (error) {
-                console.error('Error loading stats:', error);
-                document.getElementById('content').innerHTML = `
-                    <div class="error">
-                        <strong>⚠️ Error loading statistics</strong><br>
-                        ${error.message}
-                    </div>
-                `;
+                console.error('Error fetching stats:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('status-text').textContent = 'Connection Error';
             }
         }
-
-        function renderStats(data) {
-            const content = document.getElementById('content');
-            
-            const periodLabels = {
-                '24h': 'Last 24 Hours',
-                '7d': 'Last 7 Days',
-                '30d': 'Last 30 Days'
+        
+        function updateCharts(counts) {
+            const chartData = {
+                labels: ['Fire & EMS', 'Police', 'TTC'],
+                data: [counts.fire, counts.police, counts.ttc],
+                colors: ['#dc2626', '#000000', '#eab308']
             };
             
-            content.innerHTML = `
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">Total Incidents</div>
-                        <div class="stat-number">${data.total || 0}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Police Calls</div>
-                        <div class="stat-number">${data.bySource.police || 0}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Fire/EMS</div>
-                        <div class="stat-number">${(data.bySource.fire || 0) + (data.bySource.ems || 0)}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">TTC Alerts</div>
-                        <div class="stat-number">${data.bySource.ttc || 0}</div>
-                    </div>
-                </div>
-                
-                <div class="chart-section">
-                    <h2 class="chart-title">📈 Hourly Activity (Last 24 Hours)</h2>
-                    <div class="chart-container">
-                        <canvas id="hourlyChart"></canvas>
-                    </div>
-                </div>
-                
-                <div class="chart-section">
-                    <h2 class="chart-title">📊 Incidents by Source</h2>
-                    <div class="chart-container" style="height: 250px;">
-                        <canvas id="sourceChart"></canvas>
-                    </div>
-                </div>
-                
-                <div class="chart-section">
-                    <h2 class="chart-title">🔥 Top Incident Types</h2>
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Incident Type</th>
-                                <th style="text-align: right;">Count</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${Object.entries(data.byType || {})
-                                .sort((a, b) => b[1] - a[1])
-                                .slice(0, 15)
-                                .map(([type, count]) => `
-                                    <tr>
-                                        <td>${escapeHtml(type)}</td>
-                                        <td style="text-align: right;"><span class="count-badge">${count}</span></td>
-                                    </tr>
-                                `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="chart-section">
-                    <h2 class="chart-title">🚔 Top Divisions/Regions</h2>
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Division/Region</th>
-                                <th style="text-align: right;">Count</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${Object.entries(data.byDivision || {})
-                                .sort((a, b) => b[1] - a[1])
-                                .slice(0, 15)
-                                .map(([division, count]) => `
-                                    <tr>
-                                        <td>${escapeHtml(division)}</td>
-                                        <td style="text-align: right;"><span class="count-badge">${count}</span></td>
-                                    </tr>
-                                `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-            
-            // Render hourly chart
-            renderHourlyChart(data.hourly || []);
-            
-            // Render source chart
-            renderSourceChart(data.bySource || {});
-        }
-
-        function renderHourlyChart(hourlyData) {
-            const ctx = document.getElementById('hourlyChart');
-            if (!ctx) return;
-            
-            if (hourlyChart) {
-                hourlyChart.destroy();
-            }
-            
-            const labels = hourlyData.map(item => {
-                const date = new Date(item.hour);
-                return date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
-            });
-            
-            const counts = hourlyData.map(item => item.count);
-            
-            hourlyChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Incidents',
-                        data: counts,
-                        borderColor: '#c8102e',
-                        backgroundColor: 'rgba(200, 16, 46, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#c8102e',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                            padding: 12,
-                            titleColor: '#fff',
-                            bodyColor: '#e2e8f0',
-                            borderColor: 'rgba(200, 16, 46, 0.5)',
-                            borderWidth: 1
-                        }
+            // Pie Chart
+            if (pieChart) {
+                pieChart.data.datasets[0].data = chartData.data;
+                pieChart.update();
+            } else {
+                const pieCtx = document.getElementById('pieChart').getContext('2d');
+                pieChart = new Chart(pieCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: chartData.labels,
+                        datasets: [{
+                            data: chartData.data,
+                            backgroundColor: chartData.colors,
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { color: '#94a3b8' },
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
-                        },
-                        x: {
-                            ticks: { color: '#94a3b8' },
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    font: { size: 12 }
+                                }
+                            }
                         }
                     }
-                }
-            });
-        }
-
-        function renderSourceChart(bySource) {
-            const ctx = document.getElementById('sourceChart');
-            if (!ctx) return;
-            
-            if (sourceChart) {
-                sourceChart.destroy();
+                });
             }
             
-            const sources = Object.keys(bySource);
-            const counts = Object.values(bySource);
-            
-            const colors = {
-                police: '#000000',
-                fire: '#dc2626',
-                ems: '#16a34a',
-                ttc: '#eab308'
-            };
-            
-            const backgroundColors = sources.map(s => colors[s] || '#64748b');
-            
-            sourceChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: sources.map(s => s.toUpperCase()),
-                    datasets: [{
-                        data: counts,
-                        backgroundColor: backgroundColors,
-                        borderColor: '#1e293b',
-                        borderWidth: 3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: '#e2e8f0',
-                                font: { size: 14, weight: '600' },
-                                padding: 15
-                            }
+            // Bar Chart
+            if (barChart) {
+                barChart.data.datasets[0].data = chartData.data;
+                barChart.update();
+            } else {
+                const barCtx = document.getElementById('barChart').getContext('2d');
+                barChart = new Chart(barCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: chartData.labels,
+                        datasets: [{
+                            label: 'Active Incidents',
+                            data: chartData.data,
+                            backgroundColor: chartData.colors,
+                            borderWidth: 0,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
                         },
-                        tooltip: {
-                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                            padding: 12,
-                            titleColor: '#fff',
-                            bodyColor: '#e2e8f0',
-                            borderColor: 'rgba(200, 16, 46, 0.5)',
-                            borderWidth: 1
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 5,
+                                    font: { size: 11 }
+                                },
+                                grid: {
+                                    color: '#e5e7eb'
+                                }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: {
+                                    font: { size: 11 }
+                                }
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
         }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+        
+        function refreshStats() {
+            fetchStats();
         }
-
-        // Load stats on page load
-        loadStats('24h');
+        
+        // Initial load
+        fetchStats();
+        
+        // Auto-refresh every 10 seconds
+        setInterval(fetchStats, REFRESH_INTERVAL);
     </script>
 </body>
 </html>
