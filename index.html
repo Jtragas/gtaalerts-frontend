@@ -336,7 +336,49 @@
         footer { background: #1e293b; color: #e2e8f0; padding: 2rem; text-align: center; margin-top: 2rem; }
         footer a { color: #60a5fa; text-decoration: none; margin: 0 1rem; font-weight: 500; transition: color 0.2s; }
         footer a:hover { color: #93c5fd; text-decoration: underline; }
-    </style>
+    /* Push Notification Button */
+.notify-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #c8102e 0%, #a00d24 100%);
+    color: white;
+    border: none;
+    padding: 1rem 1.5rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(200, 16, 46, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s;
+    z-index: 10000;
+}
+
+.notify-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(200, 16, 46, 0.6);
+}
+
+.notify-btn.subscribed {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+}
+
+.notify-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    .notify-btn {
+        bottom: 10px;
+        right: 10px;
+        padding: 0.75rem 1.25rem;
+        font-size: 0.9rem;
+    }
+}</style>
 </head>
 <body>
     <header>
